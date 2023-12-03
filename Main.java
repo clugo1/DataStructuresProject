@@ -1,4 +1,3 @@
-import java.util.Map;
 import java.util.Scanner;
 
 public class Main {
@@ -28,7 +27,6 @@ public class Main {
             input = scanner.nextLine();
             if (!input.equalsIgnoreCase("done")) {
                 bookManager.addBookToCatalogue(input);
-
             }
         } while (!input.equalsIgnoreCase("done"));
 
@@ -52,45 +50,97 @@ public class Main {
         for (User user : userRegistry.getAllUsers()) {
             System.out.println(user.getUsername());
         }
+
+        // strings that will change during the loop with switch cases to prevent
+        // duplicate errors
         String choice;
+        String username;
+        String bookName;
         do {
-            System.out.println("Would you like to 'borrow', 'return', or 'exit'?");
+            System.out.println(
+                    "Would you like to 'borrow', 'return', 'add to waitlist', 'remove from waitlist', or 'exit'?");
             choice = scanner.nextLine();
 
-            if (choice.equalsIgnoreCase("borrow")) {
-                System.out.println("Enter username:");
-                String username = scanner.nextLine();
-                System.out.println("Enter book name to borrow:");
-                String bookName = scanner.nextLine();
-                System.out.println("Enter due date for the book (YYYY-MM-DD):");
-                String dueDate = scanner.nextLine();
+            switch (choice.toLowerCase()) {
+                // In the borrow case, we check if the book is available then enter a return
+                // date
+                case "borrow":
+                    System.out.println("Enter username:");
+                    username = scanner.nextLine();
+                    System.out.println("Enter book name to borrow:");
+                    bookName = scanner.nextLine();
 
-                userRegistry.borrowBook(username, bookName, dueDate);
-                System.out.println("Book borrowed successfully.");
-            } else if (choice.equalsIgnoreCase("return")) {
-                System.out.println("Enter username:");
-                String username = scanner.nextLine();
-                System.out.println("Enter book name to return:");
-                String bookName = scanner.nextLine();
+                    if (catalogue.isBookAvailable(bookName)) {
+                        System.out.println("Enter due date for the book (YYYY-MM-DD):");
+                        String dueDate = scanner.nextLine();
+                        userRegistry.borrowBook(username, bookName, dueDate);
+                        System.out.println("Book borrowed successfully.");
+                    } else {
+                        // if its already borrowed, we add a request for the user to join waitlist or
+                        // not
+                        System.out.println(
+                                "The book is currently borrowed. Would you like to be added to the waiting list? (yes/no)");
+                        String response = scanner.nextLine();
+                        if (response.equalsIgnoreCase("yes")) {
+                            catalogue.addToWaitingList(bookName, username);
+                            System.out.println("You have been added to the waiting list for " + bookName);
+                        }
+                    }
+                    break;
+                case "return":
+                    System.out.println("Enter username:");
+                    username = scanner.nextLine();
+                    System.out.println("Enter book name to return:");
+                    bookName = scanner.nextLine();
+                    if (userRegistry.returnBook(username, bookName)) {
+                        System.out.println("Book returned successfully.");
+                        String nextUser = catalogue.notifyNextUser(bookName);
+                        if (nextUser != null) {
+                            System.out.println(nextUser + " has been notified that " + bookName + " is now available.");
+                        }
+                    } else {
+                        System.out
+                                .println("Could not return the book. Either it wasn't borrowed or an error occurred.");
+                    }
+                    break;
+                // when the user is added, we ask the name of the book aswell. If its not in the
+                // catalogue, they are denied
+                case "add to waitlist":
+                    System.out.println("Enter username:");
+                    username = scanner.nextLine().trim();
+                    System.out.println("Enter the name of the book to be added to the waitlist:");
+                    bookName = scanner.nextLine().trim();
+                    if (catalogue.isBookPresent(bookName)) { // Check if the book exists in the catalogue
+                        catalogue.addToWaitingList(bookName, username);
+                        System.out.println("You've been added to the waitlist for " + bookName);
+                    } else {
+                        System.out.println("The book '" + bookName + "' does not exist in the catalogue.");
+                    }
+                    break;
+                // checks if they are in the waitlist, as well as if they book exists
+                case "remove from waitlist":
+                    System.out.println("Enter username:");
+                    username = scanner.nextLine();
+                    System.out.println("Enter the name of the book to remove from the waitlist:");
+                    bookName = scanner.nextLine();
 
-                userRegistry.returnBook(username, bookName);
-                System.out.println("Book returned successfully.");
+                    if (catalogue.isBookPresent(bookName) && catalogue.isBookOnWaitingList(bookName)) {
+                        catalogue.removeFromWaitingList(bookName, username);
+                        System.out.println("You've been removed from the waitlist for " + bookName);
+                    } else {
+                        // Informs the user it does not exist
+                        if (!catalogue.isBookPresent(bookName)) {
+                            System.out.println("The book '" + bookName + "' does not exist in the catalogue.");
+                        } else {
+                            System.out.println("There is no waitlist for '" + bookName + "', or you are not on it.");
+                        }
+                    }
+                    break;
             }
+            // exits the program
         } while (!choice.equalsIgnoreCase("exit"));
 
-        // Example code to print borrowing history in the Main class
-        System.out.println("Enter username to check borrowing history:");
-        String usernameToCheck = scanner.nextLine();
-        Map<String, String> borrowingHistory = userRegistry.getBorrowingHistory(usernameToCheck);
-        if (borrowingHistory.isEmpty()) {
-            System.out.println(usernameToCheck + " has no borrowed books.");
-        } else {
-            System.out.println(usernameToCheck + "'s Borrowing History:");
-            for (Map.Entry<String, String> entry : borrowingHistory.entrySet()) {
-                System.out.println("Book: " + entry.getKey() + ", Due Date: " + entry.getValue());
-            }
-        }
-
+        // Closing the scanner before the program ends
         scanner.close();
     }
 }

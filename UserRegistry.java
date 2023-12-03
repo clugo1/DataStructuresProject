@@ -24,15 +24,13 @@ public class UserRegistry {
         return new ArrayList<>(users.values());
     }
 
-
     public Map<String, String> getBorrowingHistory(String username) {
         User user = users.get(username);
         if (user != null) {
             return user.getBorrowedBooks();
         }
-        return new HashMap<>(); // Return empty map if user not found
+        return new HashMap<>(); // Returns an empty map if user not found
     }
-
 
     public void borrowBook(String username, String bookName, String dueDate) {
         User user = users.get(username);
@@ -40,12 +38,15 @@ public class UserRegistry {
             user.borrowBook(bookName, dueDate);
         }
     }
-    public void returnBook(String username, String bookName) {
+
+    // changed returnBook to boolean method so that we can implement an efficient
+    // waitlist Queue structure.
+    public boolean returnBook(String username, String bookName) {
         User user = users.get(username);
-        if (user != null) {
+        if (user != null && user.getBorrowedBooks().containsKey(bookName)) {
             user.returnBook(bookName);
+            return true; // True == book was returned correctly
         }
+        return false; // Eror locating the user, or they dont have the book in the first place
     }
 }
-// Example method to simulate book borrowing
-

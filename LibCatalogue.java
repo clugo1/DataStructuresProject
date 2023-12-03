@@ -1,6 +1,7 @@
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
@@ -10,7 +11,8 @@ public class LibCatalogue {
     private List<String> bookDatabase;
     // using set data structure to check for duplicate titles when adding a book
     private Set<String> bookTitles;
-
+    // using queue data structure to implement a waiting list for books that are
+    // currently checked out
     private Map<String, Queue<String>> waitingLists;
 
     public LibCatalogue() {
@@ -58,24 +60,41 @@ public class LibCatalogue {
         return bookDatabase;
     }
 
-    // this functions lets the user know that the next book in the waiting list is
-    // available for checkout.
+    // Adds a user to the waiting list for a book
+    public void addToWaitingList(String bookName, String username) {
+        waitingLists.computeIfAbsent(bookName, k -> new LinkedList<>()).offer(username);
+    }
+
+    // Notifies the next user on the waiting list for a book, in case they want to
+    // check
     public String notifyNextUser(String bookName) {
-        Queue<String> waitingList = waitingLists.get(bookName);
-        if (waitingList != null && !waitingList.isEmpty()) {
-            // Removes the user from queue, returns their name
-            return waitingList.poll();
+        Queue<String> waitingQueue = waitingLists.get(bookName);
+        if (waitingQueue != null && !waitingQueue.isEmpty()) {
+            return waitingQueue.poll(); // Removes the user from the queue and returns their name
         }
-        // returning null means no one is waiting for the book
         return null;
     }
 
-    // If a user no longer wants to wait for a book, we may remove them from the
-    // waiting list
-    public void removeFromWaitingList(String bookName, String userName) {
-        Queue<String> waitingList = waitingLists.get(bookName);
-        if (waitingList != null) {
-            waitingList.remove(userName);
+    // Removes a user from the waiting list for a book' waiting list that they were
+    // added to
+    public void removeFromWaitingList(String bookName, String username) {
+        Queue<String> waitingQueue = waitingLists.get(bookName);
+        if (waitingQueue != null) {
+            waitingQueue.remove(username);
         }
     }
+
+    // Checks if a book is available for borrowing
+    public boolean isBookAvailable(String bookName) {
+        // first we must check if book is in waitinglist
+        // if it is then we can continue
+        return bookDatabase.contains(bookName) && !isBookOnWaitingList(bookName);
+    }
+
+    // method that helps to check if its in the database.
+    public boolean isBookOnWaitingList(String bookName) {
+        Queue<String> waitingQueue = waitingLists.get(bookName);
+        return waitingQueue != null && !waitingQueue.isEmpty();
+    }
+
 }
