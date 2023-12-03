@@ -28,7 +28,7 @@ public class Main {
             input = scanner.nextLine();
             if (!input.equalsIgnoreCase("done")) {
                 bookManager.addBookToCatalogue(input);
-                System.out.println("'" + input + "' has been added to the catalogue.");
+
             }
         } while (!input.equalsIgnoreCase("done"));
 
@@ -78,7 +78,6 @@ public class Main {
             }
         } while (!choice.equalsIgnoreCase("exit"));
 
-
         // Example code to print borrowing history in the Main class
         System.out.println("Enter username to check borrowing history:");
         String usernameToCheck = scanner.nextLine();
@@ -91,7 +90,6 @@ public class Main {
                 System.out.println("Book: " + entry.getKey() + ", Due Date: " + entry.getValue());
             }
         }
-
 
         scanner.close();
     }
